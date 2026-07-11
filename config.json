@@ -1,0 +1,15 @@
+{
+  "port": 8080,
+  "servers": [
+    {
+      "name": "backend-a",
+      "protocol": "http",
+      "host": "localhost:9000"
+    },
+    {
+      "name": "backend-b",
+      "protocol": "http",
+      "host": "localhost:9001"
+    }
+  ]
+}
