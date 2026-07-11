@@ -31,35 +31,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("error loading config: %v", err)
 	}
+
 	proxy := NewProxy(cfg)
-
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-		targetBackend, err := proxy.nextBackend()
-		if err != nil {
-			fmt.Println(err)
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-
-		outReq := proxy.getOutboundRequest(req, targetBackend)
-
-		res, err := proxy.client.Do(outReq)
-		if err != nil {
-			fmt.Println(err)
-			w.Write([]byte("Failed to forward request"))
-			return
-		}
-
-		defer res.Body.Close()
-
-		err = proxy.copyResponse(res, w)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-	})
-
-	http.ListenAndServe(":8080", nil)
+	server := NewServer(cfg, proxy)
+	err = server.ListenAndServe()
+	if err != nil {
+		log.Fatalf("server failed: %v", err)
+	}
 }
 
 func NewProxy(cfg config.Config) *Proxy {
@@ -78,6 +56,44 @@ func NewProxy(cfg config.Config) *Proxy {
 			Timeout: 10 * time.Second,
 		},
 		backends: backends,
+	}
+}
+
+func NewServer(cfg config.Config, proxy *Proxy) http.Server {
+	return http.Server{
+		Addr:         fmt.Sprintf(":%d", cfg.Port),
+		Handler:      proxy,
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+}
+
+func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	targetBackend, err := p.nextBackend()
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
+	}
+
+	log.Printf("%s %s -> backend-%s\n", r.Method, r.URL.Path, targetBackend.name)
+
+	outReq := p.getOutboundRequest(r, targetBackend)
+
+	res, err := p.client.Do(outReq)
+	if err != nil {
+		log.Println(err)
+		w.Write([]byte("Failed to forward request"))
+		return
+	}
+
+	defer res.Body.Close()
+
+	err = p.copyResponse(res, w)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 }
 
