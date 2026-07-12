@@ -46,14 +46,14 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	defer res.Body.Close()
 
-	err = p.copyResponse(res, w)
+	err = copyResponse(res, w)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 }
 
-func getOutboundRequest(req *http.Request, targetBackend backend.Backend) *http.Request {
+func getOutboundRequest(req *http.Request, targetBackend *backend.Backend) *http.Request {
 	headers := make(http.Header)
 	maps.Copy(headers, req.Header)
 
@@ -70,7 +70,7 @@ func getOutboundRequest(req *http.Request, targetBackend backend.Backend) *http.
 	}
 }
 
-func (p *Proxy) copyResponse(res *http.Response, w http.ResponseWriter) error {
+func copyResponse(res *http.Response, w http.ResponseWriter) error {
 	for key, values := range res.Header {
 		for _, value := range values {
 			w.Header().Add(key, value)

@@ -5,37 +5,33 @@ import (
 	"sync/atomic"
 
 	"github.com/P4vell/reverse-proxy/internal/backend"
-	"github.com/P4vell/reverse-proxy/internal/config"
 )
 
 type LoadBalancer struct {
-	backends       []backend.Backend
+	backends       []*backend.Backend
 	nextBackendIdx atomic.Int32
 }
 
-func NewLoadBalancer(servers []config.ServerConfig) *LoadBalancer {
-	backends := make([]backend.Backend, 0, len(servers))
-
-	for _, s := range servers {
-		backends = append(backends, backend.Backend{
-			Name:     s.Name,
-			Protocol: s.Protocol,
-			Host:     s.Host,
-		})
-	}
-
+func NewLoadBalancer(backends []*backend.Backend) *LoadBalancer {
 	return &LoadBalancer{
 		backends: backends,
 	}
 }
 
-func (lb *LoadBalancer) NextBackend() (backend.Backend, error) {
+func (lb *LoadBalancer) NextBackend() (*backend.Backend, error) {
 	if len(lb.backends) == 0 {
-		return backend.Backend{}, errors.New("no healthy backends")
+		return nil, errors.New("no backends configured")
 	}
 
-	counter := lb.nextBackendIdx.Add(1)
-	idx := int(counter-1) % len(lb.backends)
+	start := int(lb.nextBackendIdx.Add(1)-1) % len(lb.backends)
 
-	return lb.backends[idx], nil
+	for i := 0; i < len(lb.backends); i++ {
+		idx := (start + i) % len(lb.backends)
+
+		if lb.backends[idx].IsHealthy() {
+			return lb.backends[idx], nil
+		}
+	}
+
+	return nil, errors.New("no healthy backends found")
 }

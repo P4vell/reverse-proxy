@@ -11,5 +11,9 @@
       "protocol": "http",
       "host": "localhost:9001"
     }
-  ]
+  ],
+  "health_check": {
+    "interval": 5,
+    "timeout": 2
+  }
 }

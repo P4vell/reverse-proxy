@@ -29,9 +29,8 @@ func main() {
 		w.Write([]byte(res))
 	})
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("healthy"))
 	})
 
 	addr := fmt.Sprintf(":%d", server.port)

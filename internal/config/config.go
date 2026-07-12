@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"os"
+	"time"
 )
 
 type ServerConfig struct {
@@ -11,9 +12,15 @@ type ServerConfig struct {
 	Host     string `json:"host"`
 }
 
+type HealthCheckerConfig struct {
+	Interval time.Duration `json:"interval"`
+	Timeout  time.Duration `json:"timeout"`
+}
+
 type Config struct {
-	Port    int            `json:"port"`
-	Servers []ServerConfig `json:"servers"`
+	Port        int                 `json:"port"`
+	Servers     []ServerConfig      `json:"servers"`
+	HealthCheck HealthCheckerConfig `json:"health_check"`
 }
 
 func Load() (Config, error) {
