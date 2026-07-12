@@ -29,6 +29,11 @@ func main() {
 		w.Write([]byte(res))
 	})
 
+	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("healthy"))
+	})
+
 	addr := fmt.Sprintf(":%d", server.port)
 	fmt.Printf("Server %s listening on %s", server.name, addr)
 	log.Fatal(http.ListenAndServe(addr, nil))
