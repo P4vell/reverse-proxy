@@ -8,8 +8,8 @@ import (
 	"github.com/P4vell/reverse-proxy/internal/config"
 )
 
-func NewServer(cfg config.Config, handler http.Handler) http.Server {
-	return http.Server{
+func NewServer(cfg config.Config, handler http.Handler) *http.Server {
+	return &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
 		Handler:      handler,
 		ReadTimeout:  10 * time.Second,

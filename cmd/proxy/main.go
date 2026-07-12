@@ -3,6 +3,10 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/P4vell/reverse-proxy/internal/backend"
 	"github.com/P4vell/reverse-proxy/internal/config"
@@ -18,20 +22,44 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(
+		context.Background(),
+		syscall.SIGINT,
+		syscall.SIGTERM,
+	)
+	defer stop()
 
 	backends := backend.LoadBackends(cfg.Servers)
-
 	loadBalancer := loadbalancer.NewLoadBalancer(backends)
 
 	healthChecker := healthcheck.NewHealthChecker(cfg.HealthCheck, backends)
 	go healthChecker.Start(ctx)
 
 	proxyHandler := proxy.NewProxy(loadBalancer)
-
 	httpServer := server.NewServer(cfg, proxyHandler)
-	err = httpServer.ListenAndServe()
-	if err != nil {
+
+	go runHTTPServer(httpServer)
+
+	<-ctx.Done()
+	shutdownServer(httpServer)
+}
+
+func runHTTPServer(srv *http.Server) {
+	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("server failed: %v", err)
 	}
+}
+
+func shutdownServer(srv *http.Server) {
+	shutdownCtx, shutdownCancel := context.WithTimeout(
+		context.Background(),
+		10*time.Second,
+	)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server shutdown failed: %v", err)
+	}
+
+	log.Println("server stopped")
 }
