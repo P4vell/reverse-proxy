@@ -33,5 +33,9 @@ func (lb *LoadBalancer) NextBackend() (*backend.Backend, error) {
 		}
 	}
 
-	return nil, errors.New("no healthy backends found")
+	return nil, errors.New("no healthy backend found")
+}
+
+func (lb *LoadBalancer) GetNumBackends() int {
+	return len(lb.backends)
 }

@@ -1,6 +1,8 @@
 package proxy
 
 import (
+	"errors"
+	"fmt"
 	"io"
 	"log"
 	"maps"
@@ -33,23 +35,65 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("%s %s -> %s\n", r.Method, r.URL.Path, targetBackend.Name)
-
-	outReq := getOutboundRequest(r, targetBackend)
-
-	res, err := p.client.Do(outReq)
+	res, err := p.forward(r, targetBackend)
 	if err != nil {
-		log.Println(err)
-		w.Write([]byte("Failed to forward request"))
-		return
+		res, err = p.forwardWithRetry(r, targetBackend)
+		if err != nil {
+			http.Error(w, "service unavailable", http.StatusServiceUnavailable)
+			return
+		}
 	}
-
 	defer res.Body.Close()
 
 	err = copyResponse(res, w)
 	if err != nil {
 		log.Println(err)
-		return
+	}
+}
+
+func (p *Proxy) forward(req *http.Request, b *backend.Backend) (*http.Response, error) {
+	log.Printf("%s %s -> %s\n", req.Method, req.URL.Path, b.Name)
+	outReq := getOutboundRequest(req, b)
+	res, err := p.client.Do(outReq)
+	if err != nil {
+		return nil, fmt.Errorf("backend %s failed: %w", b.Name, err)
+	}
+
+	return res, nil
+}
+
+func (p *Proxy) forwardWithRetry(req *http.Request, failedBackend *backend.Backend) (*http.Response, error) {
+	if !isRetryableMethod(req.Method) {
+		return nil, errors.New("request method is not retryable")
+	}
+
+	failedBackend.MarkUnhealthy()
+
+	for range p.selector.GetNumBackends() {
+		nextBackend, err := p.selector.NextBackend()
+		if err != nil {
+			continue
+		}
+
+		res, err := p.forward(req, nextBackend)
+		if err != nil {
+			continue
+		}
+
+		return res, nil
+	}
+
+	return nil, errors.New("all retry attempts failed")
+}
+
+func isRetryableMethod(method string) bool {
+	switch method {
+	case http.MethodGet,
+		http.MethodHead,
+		http.MethodOptions:
+		return true
+	default:
+		return false
 	}
 }
 
