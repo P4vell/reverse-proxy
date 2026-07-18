@@ -6,21 +6,21 @@ import (
 	"time"
 )
 
-type ServerConfig struct {
+type Server struct {
 	Name     string `json:"name"`
 	Protocol string `json:"protocol"`
 	Host     string `json:"host"`
 }
 
-type HealthCheckerConfig struct {
+type HealthChecker struct {
 	Interval time.Duration `json:"interval"`
 	Timeout  time.Duration `json:"timeout"`
 }
 
 type Config struct {
-	Port        int                 `json:"port"`
-	Servers     []ServerConfig      `json:"servers"`
-	HealthCheck HealthCheckerConfig `json:"health_check"`
+	Port        int           `json:"port"`
+	Servers     []Server      `json:"servers"`
+	HealthCheck HealthChecker `json:"health_check"`
 }
 
 func Load() (Config, error) {

@@ -13,7 +13,7 @@ type Backend struct {
 	healthy  atomic.Bool
 }
 
-func LoadBackends(servers []config.ServerConfig) []*Backend {
+func LoadBackends(servers []config.Server) []*Backend {
 	backends := make([]*Backend, 0, len(servers))
 
 	for _, s := range servers {
