@@ -1,4 +1,4 @@
-package healthcheck
+package healthchecker
 
 import (
 	"context"
@@ -16,7 +16,7 @@ type HealthChecker struct {
 	client   *http.Client
 }
 
-func NewHealthChecker(cfg config.HealthCheckerConfig, backends []*backend.Backend) *HealthChecker {
+func New(cfg config.HealthCheckerConfig, backends []*backend.Backend) *HealthChecker {
 	return &HealthChecker{
 		backends: backends,
 		interval: cfg.Interval * time.Second,

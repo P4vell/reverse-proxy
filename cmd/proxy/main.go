@@ -10,7 +10,7 @@ import (
 
 	"github.com/P4vell/reverse-proxy/internal/backend"
 	"github.com/P4vell/reverse-proxy/internal/config"
-	"github.com/P4vell/reverse-proxy/internal/healthcheck"
+	"github.com/P4vell/reverse-proxy/internal/healthchecker"
 	"github.com/P4vell/reverse-proxy/internal/loadbalancer"
 	"github.com/P4vell/reverse-proxy/internal/proxy"
 	"github.com/P4vell/reverse-proxy/internal/server"
@@ -30,13 +30,13 @@ func main() {
 	defer stop()
 
 	backends := backend.LoadBackends(cfg.Servers)
-	loadBalancer := loadbalancer.NewLoadBalancer(backends)
+	loadBalancer := loadbalancer.New(backends)
 
-	healthChecker := healthcheck.NewHealthChecker(cfg.HealthCheck, backends)
+	healthChecker := healthchecker.New(cfg.HealthCheck, backends)
 	go healthChecker.Start(ctx)
 
-	proxyHandler := proxy.NewProxy(loadBalancer)
-	httpServer := server.NewServer(cfg, proxyHandler)
+	proxyHandler := proxy.New(loadBalancer)
+	httpServer := server.New(cfg, proxyHandler)
 
 	go runHTTPServer(httpServer)
 

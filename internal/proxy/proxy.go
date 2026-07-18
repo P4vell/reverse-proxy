@@ -18,7 +18,7 @@ type Proxy struct {
 	selector BackendSelector
 }
 
-func NewProxy(selector BackendSelector) *Proxy {
+func New(selector BackendSelector) *Proxy {
 	return &Proxy{
 		client: &http.Client{
 			Timeout: 10 * time.Second,
@@ -69,7 +69,7 @@ func (p *Proxy) forwardWithRetry(req *http.Request, failedBackend *backend.Backe
 
 	failedBackend.MarkUnhealthy()
 
-	for range p.selector.GetNumBackends() {
+	for range p.selector.BackendsNum() {
 		nextBackend, err := p.selector.NextBackend()
 		if err != nil {
 			continue

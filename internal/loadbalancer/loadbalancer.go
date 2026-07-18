@@ -12,7 +12,7 @@ type LoadBalancer struct {
 	nextBackendIdx atomic.Int32
 }
 
-func NewLoadBalancer(backends []*backend.Backend) *LoadBalancer {
+func New(backends []*backend.Backend) *LoadBalancer {
 	return &LoadBalancer{
 		backends: backends,
 	}
@@ -36,6 +36,6 @@ func (lb *LoadBalancer) NextBackend() (*backend.Backend, error) {
 	return nil, errors.New("no healthy backend found")
 }
 
-func (lb *LoadBalancer) GetNumBackends() int {
+func (lb *LoadBalancer) BackendsNum() int {
 	return len(lb.backends)
 }

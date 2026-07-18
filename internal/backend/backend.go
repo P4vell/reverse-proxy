@@ -17,13 +17,13 @@ func LoadBackends(servers []config.ServerConfig) []*Backend {
 	backends := make([]*Backend, 0, len(servers))
 
 	for _, s := range servers {
-		backends = append(backends, NewBackend(s.Name, s.Protocol, s.Host))
+		backends = append(backends, newBackend(s.Name, s.Protocol, s.Host))
 	}
 
 	return backends
 }
 
-func NewBackend(name, protocol, host string) *Backend {
+func newBackend(name, protocol, host string) *Backend {
 	b := &Backend{
 		Name:     name,
 		Protocol: protocol,
